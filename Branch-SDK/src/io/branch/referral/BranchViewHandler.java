@@ -252,15 +252,15 @@ public class BranchViewHandler {
         view.startAnimation(animation1);
     }
 
-    private void hideViewWithAlphaAnimation(View view) {
-        AlphaAnimation animation1 = new AlphaAnimation(1.0f, 0.0f);
-        animation1.setDuration(500);
-        animation1.setStartOffset(10);
-        animation1.setInterpolator(new DecelerateInterpolator());
-        animation1.setFillAfter(true);
-        view.setVisibility(View.GONE);
-        view.startAnimation(animation1);
-    }
+//    private void hideViewWithAlphaAnimation(View view) {
+//        AlphaAnimation animation1 = new AlphaAnimation(1.0f, 0.0f);
+//        animation1.setDuration(500);
+//        animation1.setStartOffset(10);
+//        animation1.setInterpolator(new DecelerateInterpolator());
+//        animation1.setFillAfter(true);
+//        view.setVisibility(View.GONE);
+//        view.startAnimation(animation1);
+//    }
 
 
     public boolean markInstallOrOpenBranchViewPending(JSONObject branchViewObj, String action) {
