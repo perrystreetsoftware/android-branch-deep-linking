@@ -292,7 +292,10 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
     private static boolean isLogging_ = false;
 
     private static boolean checkInstallReferrer_ = false;
+
     private static long PLAYSTORE_REFERRAL_FETCH_WAIT_FOR = 5000;
+
+    private static final int MAXIUMUM_APP_UNINSTALL_COUNT = 300;
 
     /**
      * <p>A {@link Branch} object that is instantiated on init and holds the singleton instance of
@@ -330,7 +333,6 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
     private enum SESSION_STATE {
         INITIALISED, INITIALISING, UNINITIALISED
     }
-
 
     private enum INTENT_STATE {
         PENDING,
@@ -1238,17 +1240,13 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
     }
 
     /*
-     * <p>Closes the current session. Should be called by on getting the last actvity onStop() event.
+     * <p>Closes the current session. Should be called by on getting the last activity onStop() event.
      * </p>
      */
     private void closeSessionInternal() {
         executeClose();
         sessionReferredLink_ = null;
-        if (prefHelper_.getExternAppListing()) {
-            if (appListingSchedule_ == null) {
-                scheduleListOfApps();
-            }
-        }
+        getListOfApps();
     }
 
     /**
@@ -1806,6 +1804,16 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
         sendCommerceEvent(commerceEvent, null, null);
     }
 
+    private void sendUninstallEvent(JSONObject metadata) {
+        if (metadata != null) {
+            metadata = BranchUtil.filterOutBadCharacters(metadata);
+        }
+        ServerRequest req = new ServerRequestActionCompleted(context_, "uninstall", metadata, null);
+        if (!req.constructError_ && !req.handleErrors(context_)) {
+            handleNewRequest(req);
+        }
+    }
+
     /**
      * <p>Returns the parameters associated with the link that referred the user. This is only set once,
      * the first time the user is referred by a link. Think of this as the user referral parameters.
@@ -2081,6 +2089,45 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
         appListingSchedule_ = scheduler.scheduleAtFixedRate(periodicTask, (days * 24 + hours) * 60 * 60, interval, TimeUnit.SECONDS);
     }
 
+    private JSONObject getListOfApps() {
+        String installedApps = prefHelper_.getInstalledApps();
+        JSONObject installedAppObj = new JSONObject();
+        try {
+            installedAppObj = new JSONObject(installedApps);
+        } catch (JSONException e) {
+        }
+        JSONObject listOfApps = new JSONObject();
+        PackageManager pm = context_.getPackageManager();
+        int count = 0;
+        List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        if (packages != null) {
+            for (ApplicationInfo appInfo : packages) {
+                if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 1) {
+                    try {
+                        String packName = appInfo.packageName;
+                        PackageInfo packInfo = pm.getPackageInfo(appInfo.packageName, PackageManager.GET_PERMISSIONS);
+                        if (packInfo != null && packName != null) {
+                            listOfApps.put(packName, packInfo.versionCode);
+                            installedAppObj.remove(packName);
+                        }
+                    } catch (JSONException | PackageManager.NameNotFoundException ignore) {
+                    }
+                }
+                if (count == MAXIUMUM_APP_UNINSTALL_COUNT) {
+                    break;
+                } else {
+                    count++;
+                }
+            }
+        }
+        prefHelper_.setInstalledApps(listOfApps.toString());
+        prefHelper_.setLastUninstallReportDate(new Date(System.currentTimeMillis()).getTime());
+        if (installedAppObj.length() > 0) {
+            sendUninstallEvent(installedAppObj);
+        }
+        return installedAppObj;
+    }
+
     private void processNextQueueItem() {
         try {
             serverSema_.acquire();
@@ -2341,7 +2388,6 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
         req.onRequestQueued();
         processNextQueueItem();
     }
-
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void setActivityLifeCycleObserver(Application application) {

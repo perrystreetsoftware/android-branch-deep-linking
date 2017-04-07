@@ -101,6 +101,9 @@ public class PrefHelper {
 
     private static final String KEY_INSTALL_REFERRER = "bnc_install_referrer";
 
+    private static final String KEY_INSTALLED_APPS = "bnc_installed_apps";
+    private static final String KEY_UNINSTALL_REPORT_DATE = "bnc_uninstall_report_date";
+
 
     private static String Branch_Key = null;
     /**
@@ -290,6 +293,21 @@ public class PrefHelper {
         return false;
     }
 
+    public void setInstalledApps(@NonNull String installedApps) {
+        setString(KEY_INSTALLED_APPS, installedApps);
+    }
+
+    public String getInstalledApps() {
+        return getString(KEY_INSTALLED_APPS);
+    }
+
+    public void setLastUninstallReportDate(long date) {
+        setLong(KEY_UNINSTALL_REPORT_DATE, date);
+    }
+
+    public long getLastUninstallReportDate() {
+        return getLong(KEY_UNINSTALL_REPORT_DATE);
+    }
 
     public String getBranchKey() {
         if (Branch_Key == null) {
