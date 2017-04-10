@@ -1246,7 +1246,7 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
     private void closeSessionInternal() {
         executeClose();
         sessionReferredLink_ = null;
-        getListOfApps();
+        new getListOfAppsAsync().execute();
     }
 
     /**
@@ -1805,12 +1805,12 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
     }
 
     private void sendUninstallEvent(JSONObject metadata) {
-        if (metadata != null) {
+        if (metadata != null && metadata.length() > 0) {
             metadata = BranchUtil.filterOutBadCharacters(metadata);
-        }
-        ServerRequest req = new ServerRequestActionCompleted(context_, "uninstall", metadata, null);
-        if (!req.constructError_ && !req.handleErrors(context_)) {
-            handleNewRequest(req);
+            ServerRequest req = new ServerRequestActionCompleted(context_, "uninstall", metadata, null);
+            if (!req.constructError_ && !req.handleErrors(context_)) {
+                handleNewRequest(req);
+            }
         }
     }
 
@@ -2100,6 +2100,8 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
         PackageManager pm = context_.getPackageManager();
         int count = 0;
         List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        long now = System.currentTimeMillis();
+        Log.d("BranchSDK", "start:" + now);
         if (packages != null) {
             for (ApplicationInfo appInfo : packages) {
                 if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 1) {
@@ -2120,12 +2122,55 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
                 }
             }
         }
+        Log.d("BranchSDK", "dif:" + (System.currentTimeMillis() - now));
+
         prefHelper_.setInstalledApps(listOfApps.toString());
         prefHelper_.setLastUninstallReportDate(new Date(System.currentTimeMillis()).getTime());
-        if (installedAppObj.length() > 0) {
-            sendUninstallEvent(installedAppObj);
-        }
+        sendUninstallEvent(installedAppObj);
         return installedAppObj;
+    }
+
+    private class getListOfAppsAsync extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            String installedApps = prefHelper_.getInstalledApps();
+            JSONObject installedAppObj = new JSONObject();
+            try {
+                installedAppObj = new JSONObject(installedApps);
+            } catch (JSONException e) {
+            }
+            JSONObject listOfApps = new JSONObject();
+            PackageManager pm = context_.getPackageManager();
+            int count = 0;
+            List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+            long now = System.currentTimeMillis();
+            Log.d("BranchSDK", "start:" + now);
+            if (packages != null) {
+                for (ApplicationInfo appInfo : packages) {
+                    if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 1) {
+                        try {
+                            String packName = appInfo.packageName;
+                            PackageInfo packInfo = pm.getPackageInfo(appInfo.packageName, PackageManager.GET_PERMISSIONS);
+                            if (packInfo != null && packName != null) {
+                                listOfApps.put(packName, packInfo.versionCode);
+                                installedAppObj.remove(packName);
+                            }
+                        } catch (JSONException | PackageManager.NameNotFoundException ignore) {
+                        }
+                    }
+                    if (count == MAXIUMUM_APP_UNINSTALL_COUNT) {
+                        break;
+                    } else {
+                        count++;
+                    }
+                }
+            }
+            Log.d("BranchSDK", "dif:" + (System.currentTimeMillis() - now));
+            prefHelper_.setInstalledApps(listOfApps.toString());
+            prefHelper_.setLastUninstallReportDate(new Date(System.currentTimeMillis()).getTime());
+            sendUninstallEvent(installedAppObj);
+            return null;
+        }
     }
 
     private void processNextQueueItem() {
