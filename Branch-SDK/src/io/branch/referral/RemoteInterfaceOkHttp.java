@@ -19,26 +19,37 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * <p>This class assists with RESTful calls to the Branch API, by using
  * {@link HttpsURLConnection} object, and handling all restful calls via one of its GET or POST capable
  * methods.</p>
  */
-abstract class RemoteInterface {
+abstract class RemoteInterfaceOkHttp extends RemoteInterface {
     public static final String BRANCH_KEY = "branch_key";
     public static final int NO_CONNECTIVITY_STATUS = -1009;
     public static final int NO_BRANCH_KEY_STATUS = -1234;
 
     static final String SDK_VERSION = "2.8.0";
     private static final int DEFAULT_TIMEOUT = 3000;
+    private OkHttpClient okHttpClient_ = null;
+    public static final MediaType JSON
+            = MediaType.parse("application/json; charset=utf-8");
 
     /**
      * Required, default constructor for the class.
      */
-    public RemoteInterface() {
+    public RemoteInterfaceOkHttp() {
     }
 
     /**
@@ -49,8 +60,13 @@ abstract class RemoteInterface {
      */
     protected PrefHelper prefHelper_;
 
-    public RemoteInterface(Context context) {
+    public RemoteInterfaceOkHttp(Context context) {
         prefHelper_ = PrefHelper.getInstance(context);
+        okHttpClient_ = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
     }
 
 
@@ -144,7 +160,75 @@ abstract class RemoteInterface {
      *                enabled for this request or not.
      * @return A {@link ServerResponse} object containing the result of the RESTful request.
      */
-    public abstract ServerResponse make_restful_get(String baseUrl, JSONObject params, String tag, int timeout, int retryNumber, boolean log);
+
+    public ServerResponse make_restful_get(String baseUrl, JSONObject params, String tag, int timeout, int retryNumber, boolean log) {
+        String modifiedUrl = baseUrl;
+        JSONObject getParameters = new JSONObject();
+        if (addCommonParams(getParameters, retryNumber)) {
+            if (params != null) {
+                Iterator keys = params.keys();
+                while (keys.hasNext()) {
+                    String key = (String) keys.next();
+                    try {
+                        getParameters.put(key, params.getString(key));
+                    } catch (JSONException ignore) {
+                    }
+                }
+            }
+            modifiedUrl += this.convertJSONtoString(getParameters);
+        } else {
+            return new ServerResponse(tag, NO_BRANCH_KEY_STATUS);
+        }
+
+        Request request = new Request.Builder()
+                .url(modifiedUrl)
+                .build();
+        Response response = null;
+
+        long reqStartTime = System.currentTimeMillis();
+        try {
+            response = okHttpClient_.newCall(request).execute();
+            int responseCode = response.code();
+
+            int lrtt = (int) (System.currentTimeMillis() - reqStartTime);
+            if (Branch.getInstance() != null) {
+                Branch.getInstance().addExtraInstrumentationData(tag + "-" + Defines.Jsonkey.Last_Round_Trip_Time.getKey(), String.valueOf(lrtt));
+            }
+            if (Branch.getInstance() != null) {
+                int brttVal = (int) (System.currentTimeMillis() - reqStartTime);
+                Branch.getInstance().addExtraInstrumentationData(tag + "-" + Defines.Jsonkey.Branch_Round_Trip_Time.getKey(), String.valueOf(brttVal));
+            }
+            if (!response.networkResponse().isSuccessful()) {
+                return processEntityForJSON(response.body().byteStream(),
+                        responseCode, tag, log);
+            } else {
+                return processEntityForJSON(response.body().byteStream(),
+                        responseCode, tag, log);
+            }
+        } catch (IOException e) {
+            assert false;
+        } finally {
+            // Add total round trip time
+            if (Branch.getInstance() != null) {
+                int brttVal = (int) (System.currentTimeMillis() - reqStartTime);
+                Branch.getInstance().addExtraInstrumentationData(tag + "-" + Defines.Jsonkey.Branch_Round_Trip_Time.getKey(), String.valueOf(brttVal));
+            }
+        }
+
+        int responseCode = response.code();
+        if (responseCode >= 500 &&
+                retryNumber < prefHelper_.getRetryCount()) {
+            try {
+                Thread.sleep(prefHelper_.getRetryInterval());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            retryNumber++;
+            return make_restful_get(baseUrl, params, tag, timeout, retryNumber, log);
+        }
+
+        return null;
+    }
     //endregion
 
     /**
@@ -194,8 +278,94 @@ abstract class RemoteInterface {
      * @return A {@link ServerResponse} object representing the {@link HttpsURLConnection}
      * response in Branch SDK terms.
      */
-    public abstract ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout,
-                                              int retryNumber, boolean log);
+    public ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout,
+                                             int retryNumber, boolean log) {
+        if (timeout <= 0) {
+            timeout = DEFAULT_TIMEOUT;
+        }
+        JSONObject bodyCopy = new JSONObject();
+        long reqStartTime = System.currentTimeMillis();
+        try {
+
+            Iterator<?> keys = body.keys();
+            while (keys.hasNext()) {
+                String key = (String) keys.next();
+                try {
+                    bodyCopy.put(key, body.get(key));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (!addCommonParams(bodyCopy, retryNumber)) {
+                return new ServerResponse(tag, NO_BRANCH_KEY_STATUS);
+            }
+            if (log) {
+                PrefHelper.Debug("BranchSDK", "posting to " + url);
+                PrefHelper.Debug("BranchSDK", "Post value = " + bodyCopy.toString(4));
+            }
+
+            RequestBody rbody = RequestBody.create(JSON, bodyCopy.toString());
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(rbody)
+                    .build();
+            Response response = okHttpClient_.newCall(request).execute();
+
+            //URL urlObject = new URL(url);
+            //connection = (HttpsURLConnection) urlObject.openConnection();
+            //connection.setConnectTimeout(timeout);
+            //connection.setReadTimeout(timeout);
+            //connection.setDoInput(true);
+            //connection.setDoOutput(true);
+            //connection.setRequestProperty("Content-Type", "application/json");
+            //connection.setRequestProperty("Accept", "application/json");
+            //connection.setRequestMethod("POST");
+
+            int lrtt = (int) (System.currentTimeMillis() - reqStartTime);
+            if (Branch.getInstance() != null) {
+                Branch.getInstance().addExtraInstrumentationData(tag + "-" + Defines.Jsonkey.Last_Round_Trip_Time.getKey(), String.valueOf(lrtt));
+            }
+            int responseCode = response.code();
+
+            return processEntityForJSON(response.body().byteStream(),
+                    responseCode, tag, log);
+
+        } catch (SocketException ex) {
+            if (log)
+                PrefHelper.Debug(getClass().getSimpleName(), "Http connect exception: " + ex.getMessage());
+            return new ServerResponse(tag, NO_CONNECTIVITY_STATUS);
+        } catch (UnknownHostException ex) {
+            if (log)
+                PrefHelper.Debug(getClass().getSimpleName(), "Http connect exception: " + ex.getMessage());
+            return new ServerResponse(tag, NO_CONNECTIVITY_STATUS);
+        } catch (SocketTimeoutException ex) {
+            // On socket  time out retry the request for retryNumber of times
+            if (retryNumber < prefHelper_.getRetryCount()) {
+                try {
+                    Thread.sleep(prefHelper_.getRetryInterval());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                retryNumber++;
+                return make_restful_post(bodyCopy, url, tag, timeout, retryNumber, log);
+            } else {
+                return new ServerResponse(tag, BranchError.ERR_BRANCH_REQ_TIMED_OUT);
+            }
+        } catch (Exception ex) {
+            if (log) PrefHelper.Debug(getClass().getSimpleName(), "Exception: " + ex.getMessage());
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+                if (ex instanceof NetworkOnMainThreadException)
+                    Log.i("BranchSDK", "Branch Error: Don't call our synchronous methods on the main thread!!!");
+            }
+            return new ServerResponse(tag, 500);
+        } finally {
+            if (Branch.getInstance() != null) {
+                int brttVal = (int) (System.currentTimeMillis() - reqStartTime);
+                Branch.getInstance().addExtraInstrumentationData(tag + "-" + Defines.Jsonkey.Branch_Round_Trip_Time.getKey(), String.valueOf(brttVal));
+            }
+        }
+    }
     //endregion
 
     private String convertJSONtoString(JSONObject json) {
