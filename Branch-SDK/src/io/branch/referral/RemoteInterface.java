@@ -1,24 +1,15 @@
 package io.branch.referral;
 
 import android.content.Context;
-import android.os.NetworkOnMainThreadException;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.Iterator;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -163,7 +154,6 @@ abstract class RemoteInterface {
         return make_restful_post(body, url, tag, timeout, 0, true);
     }
 
-
     /**
      * <p>Makes a RESTful POST call without an associated data dictionary; passed as null.</p>
      *
@@ -195,7 +185,7 @@ abstract class RemoteInterface {
      * response in Branch SDK terms.
      */
     public abstract ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout,
-                                              int retryNumber, boolean log);
+                                                     int retryNumber, boolean log);
     //endregion
 
     private String convertJSONtoString(JSONObject json) {

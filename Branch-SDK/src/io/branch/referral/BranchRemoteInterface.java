@@ -4,7 +4,7 @@ import android.content.Context;
 
 import org.json.JSONObject;
 
-public class BranchRemoteInterface extends RemoteInterfaceOG {
+public class BranchRemoteInterface extends RemoteInterfaceOkHttp {
 
     /**
      * <p>A {@link SystemObserver} object that is used throughout the class to report on the current

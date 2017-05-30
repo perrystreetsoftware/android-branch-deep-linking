@@ -9,18 +9,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -66,6 +62,7 @@ abstract class RemoteInterfaceOkHttp extends RemoteInterface {
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .writeTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
                 .build();
     }
 
@@ -247,7 +244,6 @@ abstract class RemoteInterfaceOkHttp extends RemoteInterface {
         return make_restful_post(body, url, tag, timeout, 0, true);
     }
 
-
     /**
      * <p>Makes a RESTful POST call without an associated data dictionary; passed as null.</p>
      *
@@ -279,7 +275,7 @@ abstract class RemoteInterfaceOkHttp extends RemoteInterface {
      * response in Branch SDK terms.
      */
     public ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout,
-                                             int retryNumber, boolean log) {
+                                            int retryNumber, boolean log) {
         if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
         }
@@ -311,16 +307,6 @@ abstract class RemoteInterfaceOkHttp extends RemoteInterface {
                     .post(rbody)
                     .build();
             Response response = okHttpClient_.newCall(request).execute();
-
-            //URL urlObject = new URL(url);
-            //connection = (HttpsURLConnection) urlObject.openConnection();
-            //connection.setConnectTimeout(timeout);
-            //connection.setReadTimeout(timeout);
-            //connection.setDoInput(true);
-            //connection.setDoOutput(true);
-            //connection.setRequestProperty("Content-Type", "application/json");
-            //connection.setRequestProperty("Accept", "application/json");
-            //connection.setRequestMethod("POST");
 
             int lrtt = (int) (System.currentTimeMillis() - reqStartTime);
             if (Branch.getInstance() != null) {
