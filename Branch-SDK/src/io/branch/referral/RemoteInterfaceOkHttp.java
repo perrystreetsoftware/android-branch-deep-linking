@@ -194,13 +194,15 @@ class RemoteInterfaceOkHttp extends RemoteInterface {
                 int brttVal = (int) (System.currentTimeMillis() - reqStartTime);
                 Branch.getInstance().addExtraInstrumentationData(tag + "-" + Defines.Jsonkey.Branch_Round_Trip_Time.getKey(), String.valueOf(brttVal));
             }
-            if (!response.networkResponse().isSuccessful()) {
+
+            if (response.isSuccessful()) {
                 return processEntityForJSON(response.body().byteStream(),
                         responseCode, tag, log);
             } else {
-                return processEntityForJSON(response.body().byteStream(),
+                return processEntityForJSON(null,
                         responseCode, tag, log);
             }
+
         } catch (IOException e) {
             assert false;
         } finally {
@@ -313,8 +315,13 @@ class RemoteInterfaceOkHttp extends RemoteInterface {
             }
             int responseCode = response.code();
 
-            return processEntityForJSON(response.body().byteStream(),
-                    responseCode, tag, log);
+            if (response.isSuccessful()) {
+                return processEntityForJSON(response.body().byteStream(),
+                        responseCode, tag, log);
+            } else {
+                return processEntityForJSON(null,
+                        responseCode, tag, log);
+            }
 
         } catch (SocketException ex) {
             if (log)

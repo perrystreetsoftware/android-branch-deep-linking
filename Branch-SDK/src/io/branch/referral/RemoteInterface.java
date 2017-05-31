@@ -46,13 +46,13 @@ abstract class RemoteInterface {
         systemObserver_ = new SystemObserver(context);
     }
 
-    public SystemObserver getSystemObserver(Context context) {
+    SystemObserver getSystemObserver(Context context) {
         if ( systemObserver_ == null ) {
             systemObserver_ = new SystemObserver(context);
         }
         return this.systemObserver_; }
 
-    public ServerResponse createCustomUrlSync(JSONObject post, Context context) {
+    ServerResponse createCustomUrlSync(JSONObject post, Context context) {
         if ( prefHelper_ == null ) {
             prefHelper_ = PrefHelper.getInstance(context);
         }
@@ -60,8 +60,8 @@ abstract class RemoteInterface {
         return make_restful_post(post, prefHelper_.getAPIBaseUrl() + urlExtend, Defines.RequestPath.GetURL.getPath(), prefHelper_.getTimeout());
     }
 
-    public static RemoteInterface getRemoteInterface(Context context) {
-        RemoteInterface remoteInterface = null;
+    static RemoteInterface getRemoteInterface(Context context) {
+        RemoteInterface remoteInterface;
         try {
             remoteInterface = new RemoteInterfaceOkHttp(context);
         } catch ( Exception e ) {
