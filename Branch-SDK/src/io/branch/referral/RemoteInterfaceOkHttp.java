@@ -31,7 +31,7 @@ import okhttp3.Response;
  * {@link HttpsURLConnection} object, and handling all restful calls via one of its GET or POST capable
  * methods.</p>
  */
-abstract class RemoteInterfaceOkHttp extends RemoteInterface {
+class RemoteInterfaceOkHttp extends RemoteInterface {
     public static final String BRANCH_KEY = "branch_key";
     public static final int NO_CONNECTIVITY_STATUS = -1009;
     public static final int NO_BRANCH_KEY_STATUS = -1234;
@@ -65,7 +65,6 @@ abstract class RemoteInterfaceOkHttp extends RemoteInterface {
                 .retryOnConnectionFailure(true)
                 .build();
     }
-
 
     /**
      * <p>Converts {@link HttpsURLConnection} resultant output object into a {@link ServerResponse} object by

@@ -4,7 +4,32 @@ import android.content.Context;
 
 import org.json.JSONObject;
 
-public class BranchRemoteInterface extends RemoteInterfaceOkHttp {
+public class BranchRemoteInterface extends RemoteInterface {
+
+    @Override
+    public ServerResponse make_restful_get(String url, JSONObject params, String tag, int timeout) {
+        return super.make_restful_get(url, params, tag, timeout);
+    }
+
+    @Override
+    public ServerResponse make_restful_get(String baseUrl, JSONObject params, String tag, int timeout, int retryNumber, boolean log) {
+        return null;
+    }
+
+    @Override
+    public ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout) {
+        return super.make_restful_post(body, url, tag, timeout);
+    }
+
+    @Override
+    public ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout, boolean log) {
+        return super.make_restful_post(body, url, tag, timeout, log);
+    }
+
+    @Override
+    public ServerResponse make_restful_post(JSONObject body, String url, String tag, int timeout, int retryNumber, boolean log) {
+        return null;
+    }
 
     /**
      * <p>A {@link SystemObserver} object that is used throughout the class to report on the current

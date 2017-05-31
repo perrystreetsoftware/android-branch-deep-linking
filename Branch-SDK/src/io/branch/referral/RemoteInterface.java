@@ -39,11 +39,36 @@ abstract class RemoteInterface {
      * @see PrefHelper
      */
     protected PrefHelper prefHelper_;
+    private SystemObserver systemObserver_ = null;
 
-    public RemoteInterface(Context context) {
+    protected RemoteInterface(Context context) {
         prefHelper_ = PrefHelper.getInstance(context);
+        systemObserver_ = new SystemObserver(context);
     }
 
+    public SystemObserver getSystemObserver(Context context) {
+        if ( systemObserver_ == null ) {
+            systemObserver_ = new SystemObserver(context);
+        }
+        return this.systemObserver_; }
+
+    public ServerResponse createCustomUrlSync(JSONObject post, Context context) {
+        if ( prefHelper_ == null ) {
+            prefHelper_ = PrefHelper.getInstance(context);
+        }
+        String urlExtend = "v1/url";
+        return make_restful_post(post, prefHelper_.getAPIBaseUrl() + urlExtend, Defines.RequestPath.GetURL.getPath(), prefHelper_.getTimeout());
+    }
+
+    public static RemoteInterface getRemoteInterface(Context context) {
+        RemoteInterface remoteInterface = null;
+        try {
+            remoteInterface = new RemoteInterfaceOkHttp(context);
+        } catch ( Exception e ) {
+            remoteInterface = new RemoteInterfaceUrlConn(context);
+        }
+        return remoteInterface;
+    }
 
     /**
      * <p>Converts {@link HttpsURLConnection} resultant output object into a {@link ServerResponse} object by

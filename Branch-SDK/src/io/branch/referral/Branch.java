@@ -300,7 +300,7 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
      */
     private static Branch branchReferral_;
 
-    private BranchRemoteInterface kRemoteInterface_;
+    private RemoteInterface kRemoteInterface_;
     private PrefHelper prefHelper_;
     private final SystemObserver systemObserver_;
     private Context context_;
@@ -415,7 +415,7 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
      */
     private Branch(@NonNull Context context) {
         prefHelper_ = PrefHelper.getInstance(context);
-        kRemoteInterface_ = new BranchRemoteInterface(context);
+        kRemoteInterface_ = BranchRemoteInterface.getRemoteInterface(context);
         systemObserver_ = new SystemObserver(context);
         requestQueue_ = ServerRequestQueue.getInstance(context);
         serverSema_ = new Semaphore(1);
@@ -2250,10 +2250,10 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
         ServerRequest request;
         if (hasUser()) {
             // If there is user this is open
-            request = new ServerRequestRegisterOpen(context_, callback, kRemoteInterface_.getSystemObserver());
+            request = new ServerRequestRegisterOpen(context_, callback, kRemoteInterface_.getSystemObserver(context_));
         } else {
             // If no user this is an Install
-            request = new ServerRequestRegisterInstall(context_, callback, kRemoteInterface_.getSystemObserver(), InstallListener.getInstallationID());
+            request = new ServerRequestRegisterInstall(context_, callback, kRemoteInterface_.getSystemObserver(context_), InstallListener.getInstallationID());
         }
         request.addProcessWaitLock(lock);
         if (isGAParamsFetchInProgress_) {
@@ -2631,7 +2631,7 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
     private class getShortLinkTask extends AsyncTask<ServerRequest, Void, ServerResponse> {
         @Override
         protected ServerResponse doInBackground(ServerRequest... serverRequests) {
-            return kRemoteInterface_.createCustomUrlSync(serverRequests[0].getPost());
+            return kRemoteInterface_.createCustomUrlSync(serverRequests[0].getPost(), context_);
         }
     }
 
@@ -2969,6 +2969,10 @@ public class Branch implements BranchViewHandler.IBranchViewEvents, SystemObserv
 
     public static boolean getIsLogging() {
         return isLogging_;
+    }
+
+    public void setRemoteInterface(RemoteInterface remoteInterface) {
+        kRemoteInterface_ = remoteInterface;
     }
 
     //-------------------------- Branch Builders--------------------------------------//
