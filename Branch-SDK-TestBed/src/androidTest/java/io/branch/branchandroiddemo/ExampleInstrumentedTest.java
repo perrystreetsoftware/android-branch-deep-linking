@@ -390,19 +390,19 @@ public class ExampleInstrumentedTest {
 //        }
 //    }
 //
-//    @Test
-//    public void test13DeferredDeepLinkWithFireFox() {
-//        Log.d(TAG, "\n---- @Test::DeferredDeepLinkWithFireFox ----");
-//        if (isAppAvailable(FIREFOX_PACKAGE_NAME)) {
-//            // Test Link 1
-//            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_1);
-//            verifyLink1DeepLink();
-//
-//            // Test Link 2
-//            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_2);
-//            verifyLink2DeepLink();
-//        }
-//    }
+    @Test
+    public void test13DeferredDeepLinkWithFireFox() {
+        Log.d(TAG, "\n---- @Test::DeferredDeepLinkWithFireFox ----");
+        if (isAppAvailable(FIREFOX_PACKAGE_NAME)) {
+            // Test Link 1
+            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_1);
+            verifyLink1DeepLink();
+
+            // Test Link 2
+            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_2);
+            verifyLink2DeepLink();
+        }
+    }
 
 
     ///------------------------- Support methods------------------------------------------//

@@ -8,7 +8,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import io.branch.indexing.BranchUniversalObject;
 import io.branch.referral.Branch;
@@ -243,5 +245,33 @@ public class ExampleUnitTest {
         Product product = new Product();
         product.setVariant(variant);
         assertThat(product.getVariant(), is(variant));
+    }
+
+    @Test
+    public void validateCommerceEventProductSize() {
+        int expectedSize = 3;
+        CommerceEvent commerceEvent = new CommerceEvent();
+        Product product1 = new Product();
+        Product product2 = new Product();
+        Product product3 = new Product();
+        commerceEvent.addProduct(product1);
+        commerceEvent.addProduct(product2);
+        commerceEvent.addProduct(product3);
+        assertThat(commerceEvent.getProducts().size(), is(expectedSize));
+    }
+
+    @Test
+    public void validateCommerceEventAddProductListSize() {
+        int expectedSize = 3;
+        CommerceEvent commerceEvent = new CommerceEvent();
+        Product product1 = new Product();
+        Product product2 = new Product();
+        Product product3 = new Product();
+        List<Product> productList = new ArrayList<>();
+        productList.add(product1);
+        productList.add(product2);
+        productList.add(product3);
+        commerceEvent.setProducts(productList);
+        assertThat(commerceEvent.getProducts().size(), is(expectedSize));
     }
 }
