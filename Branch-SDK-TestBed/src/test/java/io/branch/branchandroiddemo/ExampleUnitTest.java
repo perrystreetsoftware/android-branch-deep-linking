@@ -3,6 +3,8 @@ package io.branch.branchandroiddemo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -67,6 +69,13 @@ public class ExampleUnitTest {
         branchUniversalObject = new BranchUniversalObject();
         branchUniversalObject.setContentIndexingMode(BranchUniversalObject.CONTENT_INDEX_MODE.PUBLIC);
         assertThat(branchUniversalObject.isPublicallyIndexable(), is(true));
+    }
+
+    @Test
+    public void validateBUOIsNOTIndexable() {
+        branchUniversalObject = new BranchUniversalObject();
+        branchUniversalObject.setContentIndexingMode(BranchUniversalObject.CONTENT_INDEX_MODE.PRIVATE);
+        assertThat(branchUniversalObject.isPublicallyIndexable(), is(false));
     }
 
     @Test
@@ -261,7 +270,7 @@ public class ExampleUnitTest {
     }
 
     @Test
-    public void validateCommerceEventAddProductListSize() {
+    public void validateCommerceEventProductSize2() {
         int expectedSize = 3;
         CommerceEvent commerceEvent = new CommerceEvent();
         Product product1 = new Product();
@@ -273,5 +282,96 @@ public class ExampleUnitTest {
         productList.add(product3);
         commerceEvent.setProducts(productList);
         assertThat(commerceEvent.getProducts().size(), is(expectedSize));
+    }
+
+    @Test
+    public void validateProductJSONObjectName() {
+        String expectedName = "EvanG";
+        Product product = new Product();
+        product.setName(expectedName);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.getString("name"), is(expectedName));
+        } catch ( JSONException e ) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void validateProductJSONObjectBrand() {
+        String expectedBrand = "expectedBrand";
+        Product product = new Product();
+        product.setBrand(expectedBrand);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.getString(expectedBrand), is(expectedBrand));
+        } catch ( JSONException e ) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void validateProductJSONObjectVariant() {
+        String expectedVariant = "expectedVariant";
+        Product product = new Product();
+        product.setVariant(expectedVariant);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.getString(expectedVariant), is(expectedVariant));
+        } catch ( JSONException e ) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void validateProductJSONObjectPrice() {
+        Double expectedPrice = 15d;
+        Product product = new Product();
+        product.setPrice(expectedPrice);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.getDouble("price"), is(expectedPrice));
+        } catch ( JSONException e ) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void validateProductJSONObjectQuantity() {
+        int expectedQuantity = 15;
+        Product product = new Product();
+        product.setQuantity(expectedQuantity);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.getInt("quantity"), is(expectedQuantity));
+        } catch ( JSONException e ) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void validateProductJSONObjectCategory() {
+        ProductCategory expectedProductCategory = ProductCategory.TOYS_AND_GAMES;
+        Product product = new Product();
+        product.setCategory(expectedProductCategory);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.get("category").toString(), is(expectedProductCategory.toString()));
+        } catch ( JSONException e ) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void validateProductJSONObjectSKU() {
+        String expectedSKU = "what_is_sku";
+        Product product = new Product();
+        product.setSku(expectedSKU);
+        JSONObject jsonObject = product.getProductJSONObject();
+        try {
+            assertThat(jsonObject.getString("sku"), is(expectedSKU));
+        } catch ( JSONException e ) {
+            assert false;
+        }
     }
 }

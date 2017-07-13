@@ -23,6 +23,8 @@ import io.branch.referral.util.CurrencyType;
 import io.branch.referral.util.LinkProperties;
 import io.branch.referral.util.ShareSheetStyle;
 
+import android.view.MotionEvent;
+
 public class MainActivity extends Activity {
     Branch branch;
 
@@ -31,6 +33,9 @@ public class MainActivity extends Activity {
     TextView txtRewardBalance;
 
     BranchUniversalObject branchUniversalObject;
+
+    int count = 0;
+    long startMillis = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -350,5 +355,29 @@ public class MainActivity extends Activity {
             Intent i = new Intent(getApplicationContext(), CreditHistoryActivity.class);
             startActivity(i);
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int eventaction = event.getAction();
+        if (eventaction == MotionEvent.ACTION_UP) {
+
+            long time = System.currentTimeMillis();
+
+            if (startMillis == 0 || (time - startMillis > 3000)) {
+                startMillis = time;
+                count = 1;
+            }
+            else {
+                count++;
+            }
+
+            if (count == 5) {
+                Intent i = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(i);
+            }
+            return true;
+        }
+        return false;
     }
 }

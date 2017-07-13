@@ -77,6 +77,8 @@ public class ExampleInstrumentedTest {
 
     public static final String NO_STRING_VALUE = "bnc_no_value";
 
+    public static final String TEST_KEY = "key_live_cgECtP02LMsvu8sN8h0urojoDrdWA30G";
+
     @Before
     public void createBranchInstance() {
         Log.d(TAG, "\n---- @Test::createBranchInstance() ----");
@@ -240,7 +242,7 @@ public class ExampleInstrumentedTest {
         });
 
         try {
-            Thread.sleep(2000); // Allow the browser to load the url
+            Thread.sleep(4000); // Allow the browser to load the url
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -248,7 +250,7 @@ public class ExampleInstrumentedTest {
         onView(withId(R.id.cmdCommitBuyAction)).perform(click());
 
         try {
-            Thread.sleep(2000); // Allow the browser to load the url
+            Thread.sleep(4000); // Allow the browser to load the url
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -390,19 +392,19 @@ public class ExampleInstrumentedTest {
 //        }
 //    }
 //
-    @Test
-    public void test13DeferredDeepLinkWithFireFox() {
-        Log.d(TAG, "\n---- @Test::DeferredDeepLinkWithFireFox ----");
-        if (isAppAvailable(FIREFOX_PACKAGE_NAME)) {
-            // Test Link 1
-            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_1);
-            verifyLink1DeepLink();
-
-            // Test Link 2
-            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_2);
-            verifyLink2DeepLink();
-        }
-    }
+//    @Test
+//    public void test13DeferredDeepLinkWithFireFox() {
+//        Log.d(TAG, "\n---- @Test::DeferredDeepLinkWithFireFox ----");
+//        if (isAppAvailable(FIREFOX_PACKAGE_NAME)) {
+//            // Test Link 1
+//            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_1);
+//            verifyLink1DeepLink();
+//
+//            // Test Link 2
+//            simulateDeferredDeepLinking(FIREFOX_PACKAGE_NAME, TEST_LINK_2);
+//            verifyLink2DeepLink();
+//        }
+//    }
 
 
     ///------------------------- Support methods------------------------------------------//
@@ -594,7 +596,36 @@ public class ExampleInstrumentedTest {
     }
 
     @Test
-    public void test17LogoutUser() {
+    public void test17IsInstantApp() {
+        assertFalse(Branch.isInstantApp(context_));
+    }
+
+//    @Test
+//    public void test18InitBranchWithKeyProgrammatically() {
+//        final String[] initErrorMsg = {""};
+//        final CountDownLatch latch = new CountDownLatch(1);
+//        Branch.getInstance(currActivity_, TEST_KEY).initSession(new Branch.BranchReferralInitListener() {
+//            @Override
+//            public void onInitFinished(JSONObject referringParams, BranchError error) {
+//                if (error != null) {
+//                    initErrorMsg[0] = error.getMessage();
+//                } else {
+//                    isInitialised_ = true;
+//                }
+//                latch.countDown();
+//            }
+//        });
+//        try {
+//            latch.await(MAX_BRANCH_REQ_WAIT_TIME, TimeUnit.MILLISECONDS);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//            isInitialised_ = false;
+//        }
+//        assertTrue("Branch is not initialised " + initErrorMsg[0], isInitialised_);
+//    }
+
+    @Test
+    public void test18LogoutUser() {
         Log.d(TAG, "\n---- @Test::LogoutUser ----");
         final CountDownLatch latch = new CountDownLatch(1);
         Branch.getInstance().logout(new Branch.LogoutStatusListener() {
