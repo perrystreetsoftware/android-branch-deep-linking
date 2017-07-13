@@ -65,6 +65,14 @@ public class ExampleUnitTest {
     }
 
     @Test
+    public void validateDisableEnableDeviceIDFetch() {
+        Branch.disableDeviceIDFetch(true);
+        assertThat(Branch.isDeviceIDFetchDisabled(), is(true));
+        Branch.disableDeviceIDFetch(false);
+        assertThat(Branch.isDeviceIDFetchDisabled(), is(false));
+    }
+
+    @Test
     public void validateBUOIsIndexable() {
         branchUniversalObject = new BranchUniversalObject();
         branchUniversalObject.setContentIndexingMode(BranchUniversalObject.CONTENT_INDEX_MODE.PUBLIC);
@@ -186,7 +194,7 @@ public class ExampleUnitTest {
 
     @Test
     public void validateCommerceCoupon() {
-        String coupon = "ohmyqpons";
+        String coupon = "ohmycoupons";
         CommerceEvent commerceEvent = new CommerceEvent();
         commerceEvent.setCoupon(coupon);
         assertThat(commerceEvent.getCoupon(), is(coupon));
