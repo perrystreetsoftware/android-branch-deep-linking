@@ -1,5 +1,7 @@
 package io.branch.branchandroiddemo;
 
+import android.util.Log;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -12,6 +14,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import io.branch.indexing.BranchUniversalObject;
@@ -300,7 +303,7 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.getString("name"), is(expectedName));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
     }
@@ -313,7 +316,7 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.getString(expectedBrand), is(expectedBrand));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
     }
@@ -326,7 +329,7 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.getString(expectedVariant), is(expectedVariant));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
     }
@@ -339,7 +342,7 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.getDouble("price"), is(expectedPrice));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
     }
@@ -352,7 +355,7 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.getInt("quantity"), is(expectedQuantity));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
     }
@@ -365,7 +368,7 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.get("category").toString(), is(expectedProductCategory.toString()));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
     }
@@ -378,8 +381,45 @@ public class ExampleUnitTest {
         JSONObject jsonObject = product.getProductJSONObject();
         try {
             assertThat(jsonObject.getString("sku"), is(expectedSKU));
-        } catch ( JSONException e ) {
+        } catch (JSONException e) {
             assert false;
         }
+    }
+
+    @Test
+    public void validateBUOSerialization() {
+        BranchUniversalObject testBuo = new BranchUniversalObject();
+        testBuo.setCanonicalIdentifier("my_canonical_id");
+        assertTrue(doTestBUOSerialisation(testBuo));
+    }
+
+    private static boolean doTestBUOSerialisation(BranchUniversalObject buo) {
+        boolean isPassed = false;
+        JSONObject testBuoJson1 = buo.convertToJson();
+        buo = BranchUniversalObject.createInstance(testBuoJson1);
+        JSONObject testBuoJson2 = buo.convertToJson();
+
+        if (testBuoJson1.length() == testBuoJson2.length()) {
+            Iterator<String> keys = testBuoJson1.keys();
+            try {
+                while (keys.hasNext()) {
+                    String currKey = keys.next();
+                    if (testBuoJson1.get(currKey).equals(testBuoJson2.opt(currKey))) {
+                        testBuoJson2.remove(currKey);
+                    }
+                }
+                if (testBuoJson2.length() == 0) {
+                    isPassed = true;
+                } else {
+                    Log.e("BranchTestBed", "Error Failed BUO serialisation - de-serialisation test. Unmatched keys in de-serialised version " + testBuoJson2.toString(4));
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                Log.e("BranchTestBed", "Error : BUO serialisation error.");
+            }
+        } else {
+            Log.e("BranchTestBed", "Error : BUO serialisation error. Reason: Additional entries in de-serialised object");
+        }
+        return isPassed;
     }
 }
