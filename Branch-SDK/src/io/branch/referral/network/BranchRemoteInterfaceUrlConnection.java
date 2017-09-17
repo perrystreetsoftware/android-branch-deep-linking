@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -44,7 +45,6 @@ public class BranchRemoteInterfaceUrlConnection extends BranchRemoteInterface {
     public BranchResponse doRestfulPost(String url, JSONObject payload) throws BranchRemoteException {
         return doRestfulPost(url, payload, 0);
     }
-
 
     ///-------------- private methods to implement RESTful GET / POST using HttpURLConnection ---------------//
     private BranchResponse doRestfulGet(String url, int retryNumber) throws BranchRemoteException {
@@ -113,7 +113,7 @@ public class BranchRemoteInterfaceUrlConnection extends BranchRemoteInterface {
 
 
     private BranchResponse doRestfulPost(String url, JSONObject payload, int retryNumber) throws BranchRemoteException {
-        HttpsURLConnection connection = null;
+        HttpURLConnection connection = null;
         int timeout = prefHelper.getTimeout();
         if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
@@ -124,7 +124,7 @@ public class BranchRemoteInterfaceUrlConnection extends BranchRemoteInterface {
         }
         try {
             URL urlObject = new URL(url);
-            connection = (HttpsURLConnection) urlObject.openConnection();
+            connection = (HttpURLConnection) urlObject.openConnection();
             connection.setConnectTimeout(timeout);
             connection.setReadTimeout(timeout);
             connection.setDoInput(true);

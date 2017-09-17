@@ -15,14 +15,24 @@ dependencies {
 }
 
 android {
-    compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
-    buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    publishNonDefault true
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion Integer.parseInt(project.ANDROID_BUILD_TARGET_SDK_VERSION)
-        versionName project.VERSION_NAME
-        versionCode Integer.parseInt(project.VERSION_CODE)
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionName 'BranchSDK-2.12.0'
+        versionCode 1
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField "String", "SERVER_URL", rootProject.ext.branchioDebugAppServerUrl
+        }
+        release {
+            buildConfigField "String", "SERVER_URL", rootProject.ext.branchioReleaseAppServerUrl
+        }
     }
 
     sourceSets {

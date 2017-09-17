@@ -175,7 +175,7 @@ public class PrefHelper {
      * API uses.
      */
     public String getAPIBaseUrl() {
-        return "https://api.branch.io/";
+        return BuildConfig.SERVER_URL;
     }
 
     /**
@@ -183,6 +183,7 @@ public class PrefHelper {
      *
      * @param timeout The {@link Integer} value of the timeout setting in milliseconds.
      */
+
     public void setTimeout(int timeout) {
         setInteger(KEY_TIMEOUT, timeout);
     }
