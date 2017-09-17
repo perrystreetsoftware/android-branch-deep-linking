@@ -11,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
+import io.branch.util.EnvironmentConfig;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,6 +19,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+
+import io.branch.util.AndroidInfoHelpers;
 
 /**
  * <p>A class that uses the helper pattern to provide regularly referenced static values and
@@ -175,7 +178,8 @@ public class PrefHelper {
      * API uses.
      */
     public String getAPIBaseUrl() {
-        return "https://api.branch.io/";
+        String baseUrl = EnvironmentConfig.getBaseUrl();
+        return String.format("%s%s", baseUrl, BuildConfig.BASE_PATH);
     }
 
     /**
@@ -183,6 +187,7 @@ public class PrefHelper {
      *
      * @param timeout The {@link Integer} value of the timeout setting in milliseconds.
      */
+
     public void setTimeout(int timeout) {
         setInteger(KEY_TIMEOUT, timeout);
     }

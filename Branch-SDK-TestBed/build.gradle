@@ -13,7 +13,6 @@ dependencies {
 
 android {
     compileSdkVersion 23
-    buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
     
     defaultConfig {
         applicationId "io.branch.branchandroiddemo"
@@ -54,7 +53,6 @@ android {
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
     }
-    buildToolsVersion '25.0.0'
 }
 
 File propFile = file('signing.properties');
