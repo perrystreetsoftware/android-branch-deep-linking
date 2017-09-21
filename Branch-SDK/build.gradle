@@ -22,7 +22,7 @@ android {
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionName 'BranchSDK-2.12.0'
+        versionName '2.12.0'
         versionCode 1
     }
 
