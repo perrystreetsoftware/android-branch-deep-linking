@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
+import io.branch.util.EnvironmentConfig;
+
 /**
  * <p>A class that uses the helper pattern to provide regularly referenced static values and
  * logging capabilities used in various other parts of the SDK, and that are related to globally set
@@ -175,7 +177,8 @@ public class PrefHelper {
      * API uses.
      */
     public String getAPIBaseUrl() {
-        return BuildConfig.SERVER_URL;
+        String baseUrl = EnvironmentConfig.getBaseUrl();
+        return String.format("%s%s", baseUrl, BuildConfig.BASE_PATH);
     }
 
     /**

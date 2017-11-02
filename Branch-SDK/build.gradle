@@ -24,6 +24,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionName '2.12.0'
         versionCode 1
+
+        buildConfigField "String", "GENYMOTION_LOCALHOST", rootProject.ext.devHostGenymotion
+        buildConfigField "String", "EMULATOR_LOCALHOST", rootProject.ext.devHostEmulator
+        buildConfigField "String", "DEVICE_LOCALHOST", rootProject.ext.devHostDevice
+        buildConfigField "String", "PRODUCTION_BASE_URL", rootProject.ext.prodBaseUrl
+        buildConfigField "String", "BASE_PATH", rootProject.ext.branchPath
     }
 
     // Using gradle plugin 3 you need to specify flavor dimensions.
@@ -33,11 +39,9 @@ android {
     productFlavors {
         dev {
             dimension 'buildEnv'
-            buildConfigField "String", "SERVER_URL", rootProject.ext.branchioDebugAppServerUrl
         }
         prod {
             dimension 'buildEnv'
-            buildConfigField "String", "SERVER_URL", rootProject.ext.branchioReleaseAppServerUrl
         }
     }
 
