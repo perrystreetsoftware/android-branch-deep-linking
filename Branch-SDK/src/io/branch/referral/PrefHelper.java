@@ -11,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
+import io.branch.util.EnvironmentConfig;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
-import io.branch.util.EnvironmentConfig;
+import io.branch.util.AndroidInfoHelpers;
 
 /**
  * <p>A class that uses the helper pattern to provide regularly referenced static values and
