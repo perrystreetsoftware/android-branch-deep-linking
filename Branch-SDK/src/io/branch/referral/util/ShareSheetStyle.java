@@ -28,44 +28,46 @@ public class ShareSheetStyle {
     //Customise more and copy url option
     private Drawable moreOptionIcon_;
     private String moreOptionText_;
-
+    
     private Drawable copyUrlIcon_;
     private String copyURlText_;
     private String urlCopiedMessage_;
-
+    
     private final String messageTitle_;
     private final String messageBody_;
-
+    
     private final ArrayList<SharingHelper.SHARE_WITH> preferredOptions_;
     private String defaultURL_;
-
+    
     private int styleResourceID_ = -1;
+    private int dialogThemeResourceID_ = -1;
     final Context context_;
     private boolean setFullWidthStyle_;
     private int dividerHeight_ = -1;
-
+    private int iconSize_ = 50;
+    
     private String sharingTitle_ = null;
     private View sharingTitleView_ = null;
-
+    
     private List<String> includeInShareSheet = new ArrayList<>();
     private List<String> excludeFromShareSheet = new ArrayList<>();
-
+    
     public ShareSheetStyle(@NonNull Context context, @NonNull String messageTitle, @NonNull String messageBody) {
         context_ = context;
         moreOptionIcon_ = null;
         moreOptionText_ = null;
-
+        
         copyUrlIcon_ = null;
         copyURlText_ = null;
         urlCopiedMessage_ = null;
-
+        
         preferredOptions_ = new ArrayList<>();
         defaultURL_ = null;
-
+        
         messageTitle_ = messageTitle;
         messageBody_ = messageBody;
     }
-
+    
     /**
      * <p> Set a default url to share in case there is any error creating the deep link </p>
      *
@@ -76,7 +78,7 @@ public class ShareSheetStyle {
         defaultURL_ = url;
         return this;
     }
-
+    
     /**
      * <p> Set the icon and label for the option to expand the application list to see more options.
      * Default label is set to "More" </p>
@@ -90,7 +92,7 @@ public class ShareSheetStyle {
         moreOptionText_ = label;
         return this;
     }
-
+    
     /**
      * <p> Set the icon and label for the option to expand the application list to see more options.
      * Default label is set to "More" </p>
@@ -102,10 +104,10 @@ public class ShareSheetStyle {
     public ShareSheetStyle setMoreOptionStyle(@DrawableRes int drawableIconID, @StringRes int stringLabelID) {
         moreOptionIcon_ = getDrawable(context_, drawableIconID);
         moreOptionText_ = context_.getResources().getString(stringLabelID);
-
+        
         return this;
     }
-
+    
     /**
      * <p> Set the icon, label and success message for copy url option. Default label is "Copy link".</p>
      *
@@ -121,7 +123,7 @@ public class ShareSheetStyle {
         urlCopiedMessage_ = message;
         return this;
     }
-
+    
     /**
      * <p> Set the icon, label and success message for copy url option. Default label is "Copy link".</p>
      *
@@ -136,7 +138,7 @@ public class ShareSheetStyle {
         urlCopiedMessage_ = context_.getResources().getString(stringMessageID);
         return this;
     }
-
+    
     /**
      * <p>Adds application to the preferred list of applications which are shown on share dialog.
      * Only these options will be visible when the application selector dialog launches. Other options can be
@@ -150,7 +152,7 @@ public class ShareSheetStyle {
         this.preferredOptions_.add(preferredOption);
         return this;
     }
-
+    
     /**
      * <p> Set the given style to the List View showing the share sheet</p>
      *
@@ -160,7 +162,17 @@ public class ShareSheetStyle {
         styleResourceID_ = styleResourceID;
         return this;
     }
-
+    
+    /**
+     * <p> Set the given style to the dialog showing the share sheet</p>
+     *
+     * @param styleResourceID A Styleable resource to be applied to the share sheet dialog view
+     */
+    public ShareSheetStyle setDialogThemeResourceID(@StyleRes int styleResourceID) {
+        dialogThemeResourceID_ = styleResourceID;
+        return this;
+    }
+    
     /**
      * <p>
      * Sets the share dialog to full width mode. Full width mode will show a non modal sheet with entire screen width.
@@ -173,7 +185,7 @@ public class ShareSheetStyle {
         this.setFullWidthStyle_ = setFullWidthStyle;
         return this;
     }
-
+    
     /**
      * Set the height for the divider for the sharing channels in the list. Set this to zero to remove the dividers
      *
@@ -184,7 +196,7 @@ public class ShareSheetStyle {
         this.dividerHeight_ = height;
         return this;
     }
-
+    
     /**
      * Set the title for the sharing dialog
      *
@@ -195,7 +207,7 @@ public class ShareSheetStyle {
         this.sharingTitle_ = title;
         return this;
     }
-
+    
     /**
      * Set the title for the sharing dialog
      *
@@ -206,7 +218,7 @@ public class ShareSheetStyle {
         this.sharingTitleView_ = titleView;
         return this;
     }
-
+    
     /**
      * Exclude items from the ShareSheet by package name String.
      *
@@ -217,7 +229,7 @@ public class ShareSheetStyle {
         this.excludeFromShareSheet.add(packageName);
         return this;
     }
-
+    
     /**
      * Exclude items from the ShareSheet by package name array.
      *
@@ -228,7 +240,7 @@ public class ShareSheetStyle {
         excludeFromShareSheet.addAll(Arrays.asList(packageName));
         return this;
     }
-
+    
     /**
      * Exclude items from the ShareSheet by package name List.
      *
@@ -239,7 +251,7 @@ public class ShareSheetStyle {
         this.excludeFromShareSheet.addAll(packageNames);
         return this;
     }
-
+    
     /**
      * Include items from the ShareSheet by package name String. If only "com.Slack"
      * is included, then only preferred sharing options + Slack
@@ -252,7 +264,7 @@ public class ShareSheetStyle {
         this.includeInShareSheet.add(packageName);
         return this;
     }
-
+    
     /**
      * Include items from the ShareSheet by package name Array. If only "com.Slack"
      * is included, then only preferred sharing options + Slack
@@ -265,7 +277,7 @@ public class ShareSheetStyle {
         includeInShareSheet.addAll(Arrays.asList(packageName));
         return this;
     }
-
+    
     /**
      * Include items from the ShareSheet by package name List. If only "com.Slack"
      * is included, then only preferred sharing options + Slack
@@ -278,67 +290,82 @@ public class ShareSheetStyle {
         this.includeInShareSheet.addAll(packageNames);
         return this;
     }
-
+    
+    /**
+     * Set icon size (converted to DP) for the sharing dialog
+     *
+     * @param iconSize {@link int} for setting the share sheet icon size.
+     * @return this Builder object to allow for chaining of calls to set methods.
+     */
+    public ShareSheetStyle setIconSize(int iconSize) {
+        this.iconSize_ = iconSize;
+        return this;
+    }
+    
     public List<String> getExcludedFromShareSheet() {
         return excludeFromShareSheet;
     }
-
+    
     public List<String> getIncludedInShareSheet() {
         return includeInShareSheet;
     }
-
+    
     public ArrayList<SharingHelper.SHARE_WITH> getPreferredOptions() {
         return preferredOptions_;
     }
-
+    
     public Drawable getCopyUrlIcon() {
         return copyUrlIcon_;
     }
-
+    
     public Drawable getMoreOptionIcon() {
         return moreOptionIcon_;
     }
-
+    
     public String getMessageBody() {
         return messageBody_;
     }
-
+    
     public String getMessageTitle() {
         return messageTitle_;
     }
-
+    
     public String getCopyURlText() {
         return copyURlText_;
     }
-
+    
     public String getDefaultURL() {
         return defaultURL_;
     }
-
+    
     public String getMoreOptionText() {
         return moreOptionText_;
     }
-
+    
     public String getUrlCopiedMessage() {
         return urlCopiedMessage_;
     }
-
+    
     public int getDividerHeight() {
         return dividerHeight_;
     }
-
+    
     public String getSharingTitle() {
         return sharingTitle_;
     }
-
+    
     public View getSharingTitleView() {
         return sharingTitleView_;
     }
-
+    
     public boolean getIsFullWidthStyle() {
         return setFullWidthStyle_;
     }
-
+    
+    public int getDialogThemeResourceID() {
+        return dialogThemeResourceID_;
+    }
+    
     private Drawable getDrawable(@NonNull Context context, @DrawableRes int drawableID) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             return context.getResources().getDrawable(drawableID, context.getTheme());
@@ -347,8 +374,12 @@ public class ShareSheetStyle {
             return context.getResources().getDrawable(drawableID);
         }
     }
-
+    
     public int getStyleResourceID() {
         return styleResourceID_;
+    }
+    
+    public int getIconSize() {
+        return iconSize_;
     }
 }

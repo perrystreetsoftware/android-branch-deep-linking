@@ -27,7 +27,9 @@ class ServerRequestQueue {
     private SharedPreferences sharedPref;
     private SharedPreferences.Editor editor;
     private final List<ServerRequest> queue;
-
+    //Object for synchronising operations on server request queue
+    private static final Object reqQueueLockObject = new Object();
+    
     /**
      * <p>Singleton method to return the pre-initialised, or newly initialise and return, a singleton
      * object of the type {@link ServerRequestQueue}.</p>
@@ -47,7 +49,7 @@ class ServerRequestQueue {
         }
         return SharedInstance;
     }
-
+    
     /**
      * <p>The main constructor of the ServerRequestQueue class is private because the class uses the
      * Singleton pattern.</p>
@@ -60,63 +62,61 @@ class ServerRequestQueue {
         editor = sharedPref.edit();
         queue = retrieve(c);
     }
-
+    
     private void persist() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                synchronized (queue) {
+                synchronized (reqQueueLockObject) {
                     JSONArray jsonArr = new JSONArray();
                     for (ServerRequest aQueue : queue) {
-                        JSONObject json = aQueue.toJSON();
-                        if (json != null) {
-                            jsonArr.put(json);
+                        if (aQueue.isPersistable()) {
+                            JSONObject json = aQueue.toJSON();
+                            if (json != null) {
+                                jsonArr.put(json);
+                            }
                         }
                     }
                     boolean succeeded = false;
                     try {
                         editor.putString(PREF_KEY, jsonArr.toString()).commit();
                         succeeded = true;
-                    } catch (ConcurrentModificationException ex) {
+                    } catch (Exception ex) {
                         PrefHelper.Debug("Persisting Queue: ", "Failed to persit queue " + ex.getMessage());
                     } finally {
                         if (!succeeded) {
                             try {
                                 editor.putString(PREF_KEY, jsonArr.toString()).commit();
-                            } catch (ConcurrentModificationException ignored) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
-
                 }
             }
         }).start();
     }
-
+    
     private List<ServerRequest> retrieve(Context context) {
-        List<ServerRequest> result = Collections.synchronizedList(new LinkedList<ServerRequest>());
         String jsonStr = sharedPref.getString(PREF_KEY, null);
-
-        if (jsonStr != null) {
-            try {
-                JSONArray jsonArr = new JSONArray(jsonStr);
-                for (int i = 0; i < Math.min(jsonArr.length(), MAX_ITEMS); i++) {
-                    JSONObject json = jsonArr.getJSONObject(i);
-                    ServerRequest req = ServerRequest.fromJSON(json, context);
-                    if (req != null) {
-                        // No need to retrieve close or logout from previous session
-                        if (!(req instanceof ServerRequestRegisterClose || req instanceof ServerRequestLogout)) {
+        List<ServerRequest> result = Collections.synchronizedList(new LinkedList<ServerRequest>());
+        synchronized (reqQueueLockObject) {
+            if (jsonStr != null) {
+                try {
+                    JSONArray jsonArr = new JSONArray(jsonStr);
+                    for (int i = 0, size = Math.min(jsonArr.length(), MAX_ITEMS); i < size; i++) {
+                        JSONObject json = jsonArr.getJSONObject(i);
+                        ServerRequest req = ServerRequest.fromJSON(json, context);
+                        if (req != null) {
                             result.add(req);
                         }
                     }
+                } catch (JSONException ignored) {
                 }
-            } catch (JSONException ignored) {
             }
         }
-
         return result;
     }
-
+    
     /**
      * <p>Gets the number of {@link ServerRequest} objects currently queued up for submission to
      * the Branch API.</p>
@@ -125,55 +125,63 @@ class ServerRequestQueue {
      * that forms the logical queue for the class.
      */
     public int getSize() {
-        return queue.size();
+        synchronized (reqQueueLockObject) {
+            return queue.size();
+        }
     }
-
+    
     /**
      * <p>Adds a {@link ServerRequest} object to the queue.</p>
      *
      * @param request The {@link ServerRequest} object to add to the queue.
      */
-    public void enqueue(ServerRequest request) {
-        if (request != null) {
-            queue.add(request);
-            if (getSize() >= MAX_ITEMS) {
-                queue.remove(1);
+    void enqueue(ServerRequest request) {
+        synchronized (reqQueueLockObject) {
+            if (request != null) {
+                queue.add(request);
+                if (getSize() >= MAX_ITEMS) {
+                    queue.remove(1);
+                }
+                persist();
             }
-            persist();
         }
     }
-
+    
     /**
      * <p>Removes the queued {@link ServerRequest} object at position with index 0 within the queue,
      * and returns it as a result.</p>
      *
      * @return The {@link ServerRequest} object at position with index 0 within the queue.
      */
-    public ServerRequest dequeue() {
+    ServerRequest dequeue() {
         ServerRequest req = null;
-        try {
-            req = queue.remove(0);
-            persist();
-        } catch (IndexOutOfBoundsException | NoSuchElementException ignored) {
+        synchronized (reqQueueLockObject) {
+            try {
+                req = queue.remove(0);
+                persist();
+            } catch (IndexOutOfBoundsException | NoSuchElementException ignored) {
+            }
         }
         return req;
     }
-
+    
     /**
      * <p>Gets the queued {@link ServerRequest} object at position with index 0 within the queue, but
      * unlike {@link #dequeue()}, does not remove it from the queue.</p>
      *
      * @return The {@link ServerRequest} object at position with index 0 within the queue.
      */
-    public ServerRequest peek() {
+    ServerRequest peek() {
         ServerRequest req = null;
-        try {
-            req = queue.get(0);
-        } catch (IndexOutOfBoundsException | NoSuchElementException ignored) {
+        synchronized (reqQueueLockObject) {
+            try {
+                req = queue.get(0);
+            } catch (IndexOutOfBoundsException | NoSuchElementException ignored) {
+            }
         }
         return req;
     }
-
+    
     /**
      * <p>Gets the queued {@link ServerRequest} object at position with index specified in the supplied
      * parameter, within the queue. Like {@link #peek()}, the item is not removed from the queue.</p>
@@ -184,15 +192,17 @@ class ServerRequestQueue {
      * request exists at that position, or if the index supplied is not valid, for
      * instance if {@link #getSize()} is 6 and index 6 is called.
      */
-    public ServerRequest peekAt(int index) {
+    ServerRequest peekAt(int index) {
         ServerRequest req = null;
-        try {
-            req = queue.get(index);
-        } catch (IndexOutOfBoundsException | NoSuchElementException ignored) {
+        synchronized (reqQueueLockObject) {
+            try {
+                req = queue.get(index);
+            } catch (IndexOutOfBoundsException | NoSuchElementException ignored) {
+            }
         }
         return req;
     }
-
+    
     /**
      * <p>As the method name implies, inserts a {@link ServerRequest} into the queue at the index
      * position specified.</p>
@@ -202,17 +212,19 @@ class ServerRequestQueue {
      *                supplied {@link ServerRequest} object. Fails silently if the index
      *                supplied is invalid.
      */
-    public void insert(ServerRequest request, int index) {
-        try {
-            if (queue.size() < index) {
-                index = queue.size();
+    void insert(ServerRequest request, int index) {
+        synchronized (reqQueueLockObject) {
+            try {
+                if (queue.size() < index) {
+                    index = queue.size();
+                }
+                queue.add(index, request);
+                persist();
+            } catch (IndexOutOfBoundsException ignored) {
             }
-            queue.add(index, request);
-            persist();
-        } catch (IndexOutOfBoundsException ignored) {
         }
     }
-
+    
     /**
      * <p>As the method name implies, removes the {@link ServerRequest} object, at the position
      * indicated by the {@link Integer} parameter supplied.</p>
@@ -222,16 +234,19 @@ class ServerRequestQueue {
      *              supplied is invalid.
      * @return The {@link ServerRequest} object being removed.
      */
+    @SuppressWarnings("unused")
     public ServerRequest removeAt(int index) {
         ServerRequest req = null;
-        try {
-            req = queue.remove(index);
-            persist();
-        } catch (IndexOutOfBoundsException ignored) {
+        synchronized (reqQueueLockObject) {
+            try {
+                req = queue.remove(index);
+                persist();
+            } catch (IndexOutOfBoundsException ignored) {
+            }
         }
         return req;
     }
-
+    
     /**
      * <p>As the method name implies, removes {@link ServerRequest} supplied in the parameter if it
      * is present in the queue.</p>
@@ -241,25 +256,29 @@ class ServerRequestQueue {
      */
     public boolean remove(ServerRequest request) {
         boolean isRemoved = false;
-        try {
-            isRemoved = queue.remove(request);
-            persist();
-        } catch (UnsupportedOperationException ignored) {
+        synchronized (reqQueueLockObject) {
+            try {
+                isRemoved = queue.remove(request);
+                persist();
+            } catch (UnsupportedOperationException ignored) {
+            }
         }
         return isRemoved;
     }
-
+    
     /**
      * <p> Clears all pending requests in the queue </p>
      */
-    public void clear() {
-        try {
-            queue.clear();
-            persist();
-        } catch (UnsupportedOperationException ignored) {
+    void clear() {
+        synchronized (reqQueueLockObject) {
+            try {
+                queue.clear();
+                persist();
+            } catch (UnsupportedOperationException ignored) {
+            }
         }
     }
-
+    
     /**
      * <p>Determines whether the queue contains a session/app close request.</p>
      *
@@ -267,8 +286,8 @@ class ServerRequestQueue {
      * session close request. <i>True</i> if the queue contains a close request,
      * <i>False</i> if not.
      */
-    public boolean containsClose() {
-        synchronized (queue) {
+    boolean containsClose() {
+        synchronized (reqQueueLockObject) {
             for (ServerRequest req : queue) {
                 if (req != null &&
                         req.getRequestPath().equals(Defines.RequestPath.RegisterClose.getPath())) {
@@ -278,7 +297,7 @@ class ServerRequestQueue {
         }
         return false;
     }
-
+    
     /**
      * <p>Determines whether the queue contains an install/register request.</p>
      *
@@ -286,8 +305,8 @@ class ServerRequestQueue {
      * install/register request. <i>True</i> if the queue contains a close request,
      * <i>False</i> if not.
      */
-    public boolean containsInstallOrOpen() {
-        synchronized (queue) {
+    boolean containsInstallOrOpen() {
+        synchronized (reqQueueLockObject) {
             for (ServerRequest req : queue) {
                 if (req != null &&
                         ((req instanceof ServerRequestRegisterInstall) || req instanceof ServerRequestRegisterOpen)) {
@@ -297,7 +316,7 @@ class ServerRequestQueue {
         }
         return false;
     }
-
+    
     /**
      * <p>Moves any {@link ServerRequest} of type {@link ServerRequestRegisterInstall}
      * or {@link ServerRequestRegisterOpen} to the front of the queue.</p>
@@ -307,9 +326,10 @@ class ServerRequestQueue {
      *                     request at the front of the queue or not.
      * @param callback     A {Branch.BranchReferralInitListener} instance for open or install callback.
      */
-    public void moveInstallOrOpenToFront(ServerRequest request, int networkCount, Branch.BranchReferralInitListener callback) {
-
-        synchronized (queue) {
+    @SuppressWarnings("unused")
+    void moveInstallOrOpenToFront(ServerRequest request, int networkCount, Branch.BranchReferralInitListener callback) {
+        
+        synchronized (reqQueueLockObject) {
             Iterator<ServerRequest> iter = queue.iterator();
             while (iter.hasNext()) {
                 ServerRequest req = iter.next();
@@ -321,24 +341,18 @@ class ServerRequestQueue {
                 }
             }
         }
-
-        if (networkCount == 0) {
-            insert(request, 0);
-        } else {
-            insert(request, 1);
-        }
+        
+        insert(request, networkCount == 0 ? 0 : 1);
     }
-
+    
     /**
      * Sets the given callback to the existing open or install request in the queue
      *
      * @param callback A{@link Branch.BranchReferralInitListener} callback instance.
      */
-    public void setInstallOrOpenCallback(Branch.BranchReferralInitListener callback) {
-        synchronized (queue) {
-            Iterator<ServerRequest> iter = queue.iterator();
-            while (iter.hasNext()) {
-                ServerRequest req = iter.next();
+    void setInstallOrOpenCallback(Branch.BranchReferralInitListener callback) {
+        synchronized (reqQueueLockObject) {
+            for (ServerRequest req : queue) {
                 if (req != null) {
                     if (req instanceof ServerRequestRegisterInstall) {
                         ((ServerRequestRegisterInstall) req).setInitFinishedCallback(callback);
@@ -346,34 +360,29 @@ class ServerRequestQueue {
                         ((ServerRequestRegisterOpen) req).setInitFinishedCallback(callback);
                     }
                 }
-
             }
         }
     }
-
+    
     /**
      * Set Process wait lock to false for any open / install request in the queue
      */
-    public void unlockProcessWait(ServerRequest.PROCESS_WAIT_LOCK lock) {
-        synchronized (queue) {
-            Iterator<ServerRequest> iter = queue.iterator();
-            while (iter.hasNext()) {
-                ServerRequest req = iter.next();
+    void unlockProcessWait(ServerRequest.PROCESS_WAIT_LOCK lock) {
+        synchronized (reqQueueLockObject) {
+            for (ServerRequest req : queue) {
                 if (req != null) {
                     req.removeProcessWaitLock(lock);
                 }
             }
         }
     }
-
+    
     /**
      * Sets the strong match wait for any init session request in the queue
      */
-    public void setStrongMatchWaitLock() {
-        synchronized (queue) {
-            Iterator<ServerRequest> iter = queue.iterator();
-            while (iter.hasNext()) {
-                ServerRequest req = iter.next();
+    void setStrongMatchWaitLock() {
+        synchronized (reqQueueLockObject) {
+            for (ServerRequest req : queue) {
                 if (req != null) {
                     if (req instanceof ServerRequestInitSession) {
                         req.addProcessWaitLock(ServerRequest.PROCESS_WAIT_LOCK.STRONG_MATCH_PENDING_WAIT_LOCK);
@@ -382,5 +391,4 @@ class ServerRequestQueue {
             }
         }
     }
-
 }

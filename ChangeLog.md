@@ -1,5 +1,39 @@
 Branch Android SDK change log
 
+- v2.18.1 [17-05-18] Fixing issue with facebook app link check caused by incorrect value for facebook_app_link_checked state. Fix for app indexing to run on separate thread.
+
+- v2.18.0 [10-05-18] Removing unnecessary String conversion for deeplink data JSONObject. This will fix the issue of additional escape characters present in the deep link data
+
+- v2.17.1 Hot fix : Preference items cleared over app re-open if Branch key is missing in manifest file.
+
+- v2.17.0 Adding tracking disable feature, this is useful for GDPR compliance. Fixing share sheet to show correct selection. Fix for updating device params to Branch requests before sending. Updating to latest Gradle version. Few other minor fixes.
+
+- v2.16.0 Adding support for collecting data from selected URIs with remote skip list update feature. Fixing an issue with handling BUO metadata.
+
+- v2.15.1 Hot fix : Install requests getting stuck in the request queue if failed once. Caused by improper install referrer wait lock addition to install request.
+
+- v2.15.0 Adding support for Android install referrer lib. Changing instant deep linking into opt-in feature. Collecting install timestamps for better install or update attributions.
+
+- v2.14.5 Hot fix: Re-open after offline install event fails. Support for modifying deep link data and link params on share sheet events.
+
+- v2.14.4 Fixing a possible request queue concurrent execution. Adding support for opt-out IDL. Fix for maintaining strong typing for arrays when BUO is serialised. Adding extended catch for dealing with dead object. Support for "rating" property in content metadata.
+
+- v2.14.3 Fixing a corner case crash from concurrent modification case. Fixing issue with deep link param delivery after orientation change.
+
+- v2.14.2 Adding FB limit app tracking. Fix for instant deep liking when activities are launched from the stack. Few other minor fixes.
+
+- v2.14.1 Ensure backward compatibility in case deprecated BUO methods are used.
+
+- v2.14.0 Adding support for Branch reserved events. Support to update delayed request metadata. Skipping instant deep linking on forcing new session.
+
+- v2.13.1 Hot fix : Referral params are not returned when initSession is called mutiple times while an init session is in progress
+
+- v2.13.0 Adding instant deeplinking support
+
+- v2.12.2 Fixing play store referrer capture issue on Android 6. Changes to collect UI_Mode to identity different platforms.  Fix for stale intents when activities are launched from history.
+
+- v2.12.1 Fixing discrepancy in Branch driven app open count in Answers' dashboard. Adding bounds to share sheet and option to set bounds.
+
 - v2.12.0 Adding support for Firebase based app indexing and local content indexing. Few proactive protections for parcel errors caused by malformed parcels in the intent. Url encoding for long link params.
 
 - v2.11.1 Removing app listing related implementations.

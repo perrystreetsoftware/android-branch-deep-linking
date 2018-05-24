@@ -316,12 +316,13 @@ if (Branch.isInstantApp(this)) {
     @Override
     public void onClick(View v) {
        BranchUniversalObject branchUniversalObject = new BranchUniversalObject()
-            .setCanonicalIdentifier("item/12345")
-            .setTitle("My Content Title")
-            .setContentDescription("My Content Description")
-            .setContentImageUrl("https://example.com/mycontent-12345.png")
-            .addContentMetadata("property1", "blue")
-            .addContentMetadata("property2", "red");
+           .setCanonicalIdentifier("item/12345")
+           .setTitle("My Content Title")
+           .setContentDescription("My Content Description")
+           .setContentImageUrl("https://example.com/mycontent-12345.png")
+           .setContentMetadata(new ContentMetadata()
+                 .addCustomMetadata("property1", "blue")
+                 .addCustomMetadata("property2", "red"));
 
       Branch.showInstallPrompt(myActivity, activity_ret_code, branchUniversalObject);
     }
@@ -539,8 +540,9 @@ The universal object is where you define all of the custom metadata associated w
             .setContentIndexingMode(BranchUniversalObject.CONTENT_INDEX_MODE.PUBLIC)
 
      		// Here is where you can add custom keys/values to the deep link data
-            .addContentMetadata("property1", "blue")
-            .addContentMetadata("property2", "red");
+            .setContentMetadata(new ContentMetadata()
+                             .addCustomMetadata("property1", "blue")
+                             .addCustomMetadata("property2", "red"));
 ```
 
 #### Parameters
@@ -563,7 +565,36 @@ The universal object is where you define all of the custom metadata associated w
 
 **expirationDate**: The date when the content will not longer be available or valid. Currently, this is only used for Spotlight indexing but will be used by Branch in the future.
 
+
+### Tracking User Actions and Events
+Use `BranchEvent` class to track special user actions or application specific events beyond app installs, opens, and sharing. You can track events such as when a user adds an item to an on-line shopping cart, or searches for a keyword etc.
+`BranchEvent` provides an interface to add content(s) represented by a BranchUniversalObject in order to associate content(s) with events.
+You can view analytics for the BranchEvents you fire on the Branch dashboard. BranchEvents provide a seamless integration with many third party analytics providers like Google Analytics, Criteo.
+`BRANCH_STANDARD_EVENT` enumerate the most commonly tracked events and event parameters that can be used with `BranchEvent` for the best results. You can always use custom event names and event parameters.
+
+```java
+new BranchEvent(BRANCH_STANDARD_EVENT.PURCHASE)
+    .setAffiliation("affiliation_value")
+    .setCoupon("coupon_value")
+    .setCurrency(CurrencyType.USD)
+    .setTax(12.3)
+    .setRevenue(1.5)
+    .setDescription("Event_description")
+    .setSearchQuery("related_search_query")
+    .addCustomDataProperty("Custom_Event_Property_Key", "Custom_Event_Property_Val")
+    .addContentItems(contentBUO1, contentBUO2)
+    .logEvent(context);
+```
+
+```java
+new BranchEvent("My_Custom_Event")
+    .addCustomDataProperty("key1", "value1")
+    .addCustomDataProperty("key2", "value2")
+    .logEvent(context);
+```
+
 ### Register User Actions On An Object
+This functionality is deprecated. Please consider using `BranchEvent` for tracking user action and events as described [here](#tracking-user-actions-and-events).
 
 We've added a series of custom events that you'll want to start tracking for rich analytics and targeting. Here's a list below with a sample snippet that calls the register view event.
 
@@ -665,7 +696,7 @@ To show the share sheet, call the following on your Branch Universal Object. The
 branchUniversalObject.showShareSheet(this, 
                                       linkProperties,
                                       shareSheetStyle,
-                                       new Branch.BranchLinkShareListener() {
+                                       new Branch.ExtendedBranchLinkShareListener() {
     @Override
     public void onShareLinkDialogLaunched() {
     }
@@ -677,6 +708,10 @@ branchUniversalObject.showShareSheet(this,
     }
     @Override
     public void onChannelSelected(String channelName) {
+    }
+    @Override
+    public boolean onChannelSelected(String channelName, BranchUniversalObject buo, LinkProperties linkProperties) {
+        return false;
     }
 });
 ```
@@ -778,6 +813,17 @@ The response will return an array that has been parsed from the following JSON:
 3. _3_ - This is a very unique case where we will subtract credits automatically when we detect fraud
 
 
+### Enable or Disable User Tracking
+In order to comply with tracking requirements, you can disable tracking at the SDK level. Simply call:
+ ```java
+Branch.getInstance().disableTracking(true);
+```
+
+This will prevent any Branch requests from being sent across the network, except for the case of deep linking. If someone clicks a Branch link, but has expressed not to be tracked, we will return deep linking data back to the client but without tracking information captured.
+
+In do-not-track mode, you will still be able to create and share links. They will not have identifiable information. Event tracking won’t pass data back to the server if a user has expressed to not be tracked. You can change this behavior at any time, but calling the above function. This information will be saved and persisted.
+
+
 ## Troubleshooting
 
 ### ClassNotFoundException : Branch.Java
@@ -811,3 +857,9 @@ This is often caused by a Proguard bug with optimization. Please try to use the 
 ### Proguard warning or errors with `answers-shim` module
 This is often caused when you exclude the `answers-shim` module from Branch SDK depending on your proguard settings. Please add the following to your proguard file to solve this issue
 `-dontwarn com.crashlytics.android.answers.shim.**`
+
+### Proguard warning or errors with `appindexing` module
+Branch SDK has optional dependencies on Firebase app indexing and Android install referrer classes to provide new Firebase content listing features and support new Android install referrer library. This may cause a proguard warning depending on your proguard settings.
+Please add the following to your proguard file to solve this issue
+`-dontwarn com.google.firebase.appindexing.**`
+`-dontwarn com.android.installreferrer.api.**`
